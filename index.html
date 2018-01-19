@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Suppa Poterie</title>
+	<link rel="shortcut icon" href="https://image.flaticon.com/icons/png/128/649/649393.png" />
+	<!-- <script src="http://code.jquery.com/jquery-latest.js"></script> -->
+	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script>
+
+	<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.min.js"></script> -->
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/jquery.canvasjs.min.js"></script> -->
+	<!-- <script src="media.js"></script> -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.6.0/NoSleep.min.js"></script>
+	<script src="main.js">
+		
+	</script>
+
+
+	<style type="text/css">
+	body {
+		color:"black";
+		background-color: "white";
+	}
+	.mainContainer {
+		
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		flex-wrap: nowrap;
+		justify-content: stretch;
+		height:90vh;
+	}
+
+	.dashBoard{
+		flex:3 1 20vh;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: space-between;
+		margin: 10px;
+	}
+
+	.dashBoard>div{
+		display: flex;
+		flex: 1;
+		transition: 0.3s;
+	}
+
+	.columnAvg{
+		justify-content: stretch;
+		align-items: flex-end;
+		display: flex;
+		flex-direction: column;
+		flex-wrap: nowrap;
+		flex: 1;
+		font-size: 8vh;
+		text-align: right;
+
+	}
+	.columnAvg>div{
+		justify-content: stretch;
+		align-items: flex-end;
+		text-align: right;
+		display: flex;
+		flex: 1;
+	}
+	.led{
+		flex: 0 1 20px;
+		background: red;
+		-webkit-border-radius: 5px;
+		-moz-border-radius: 5px;
+		border-radius: 5px;
+		text-align: center;
+		display: flex;
+		flex-direction: row;
+
+	}
+	.led>div{
+		flex: 1;
+		text-align: center;
+	}
+
+	.sidenav {
+		height: 100%;
+		width: 0;
+		transition: 0.5s;
+		position: fixed;
+		z-index: 1;
+		top: 0;
+		right: 0;
+		background-color: #111;
+		overflow-x: hidden;
+		padding-top: 60px;
+		display:flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+	}
+
+	.sidenav div{
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between
+	}
+	.sidenav input{
+		font-size: 25px;
+	}
+	.sidenav a {
+		padding: 8px 18px 8px 32px;
+		text-decoration: none;
+		font-size: 25px;
+		color: #818181;
+		display: block;
+		transition: 0.3s;
+	}
+/*
+	.sidenav div a{
+		width:25vw;
+		display: block;
+	}*/
+
+	.sidenav a:hover {
+		color: #f1f1f1;
+	}
+
+	.sidenav .closebtn {
+		position: absolute;
+		top: 0;
+		right: 25px;
+		font-size: 36px;
+		margin-left: 50px;
+	}
+
+	@media screen and (max-height: 450px) {
+		.sidenav {padding-top: 15px;}
+		.sidenav a {font-size: 18px;}
+	}
+
+
+	/* The switch - the box around the slider */
+	.switch {
+		position: relative;
+    flex: 0 0 60px;
+		height: 34px;
+	}
+
+	/* Hide default HTML checkbox */
+	.switch input {display:none;}
+
+	/* The slider */
+	.slider {
+		position: absolute;
+		cursor: pointer;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: #ccc;
+		-webkit-transition: .4s;
+		transition: .4s;
+	}
+
+	.slider:before {
+		position: absolute;
+		content: "";
+		height: 26px;
+		width: 26px;
+		left: 4px;
+		bottom: 4px;
+		background-color: white;
+		-webkit-transition: .4s;
+		transition: .4s;
+	}
+
+	input:checked + .slider {
+		background-color: #2196F3;
+	}
+
+	input:focus + .slider {
+		box-shadow: 0 0 1px #2196F3;
+	}
+
+	input:checked + .slider:before {
+		/*-webkit-transform: translateX(26px);
+		-ms-transform: translateX(26px);*/
+		transform: translateX(26px);
+	}
+
+	/* Rounded sliders */
+	.slider.round {
+		border-radius: 34px;
+	}
+
+	.slider.round:before {
+		border-radius: 50%;
+	}
+
+</style>
+</head>
+<body>
+
+	<div class="mainContainer" id="mainContainer">
+		<div class="led" id="led" >
+
+			<div id = "WebSocket_State" >State</div>
+			<div style="cursor:pointer" onclick="openNav()">&#9776; Menu</div>
+		</div>
+		<div class="dashBoard">
+			
+
+			<div id="output_div" style="font-size: 20vh;">Temp</div>
+			<div id="output_unit" style="font-size: 3vw;">&#8451; </div>
+			<div class="columnAvg" id="columnAvg">
+				<div id="avg5_div" >Avg5</div>
+				<div id="avg30_div"  >Avg30</div>
+				<div id="avgmod_div" >AvgMod</div>
+			</div>
+			<div class="columnAvg" style="font-size: 3vw; flex:0 1 17vw">
+				<div	id="5_units" >&#8451;/h (5m)</div>
+				<div	id="30_units" >&#8451;/h (30m)</div>
+				<div	id="mod_units">&#8451;/h (?m)</div>
+			</div>
+			
+		</div>
+
+		<div id="chartContainer" style="flex:5 0 40vh" > chart</div>
+		
+		
+		<div id="menu" class="sidenav">
+			<a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+			<a id="rec_button" href="javascript:toggleRec()">None</a>
+			<a href="javascript:download_graph()">Download</a>
+
+			<div>
+				<a href = "javascript:update3rdSlope()"> 3rd Average</a>
+				<input type="text" id="3rdSlope" value="60" onkeydown = "if (event.keyCode == 13)update3rdSlope()" onblur="update3rdSlope()" ></input>
+			</div>
+
+			<div >
+				<a href = "javascript:updateRefCurv()"> Ref Curve</a>
+				<input type="text" id="refCurv" value="ref curve" onkeydown = "if (event.keyCode == 13)updateRefCurv()" onblur="updateRefCurv()" ></input>
+			</div>
+			<div>
+				<a>Alarm</a>
+				<label class="switch">
+					<input  type="checkbox" id="enableAlarm">
+					<span class="slider round"></span>
+				</label>
+			</div>
+
+			<div >
+				<a href = "javascript:updateAlarm()"> Alarm Slope</a>
+				<input type="number" id="alarmRangeMin" value="0" step="1" style="width:6vw" onchange="updateAlarm()" onblur="updateAlarm()"></input>
+				<input type="number" id="alarmRangeMax" value="0" step="1" style="width:6vw" onchange="updateAlarm()" onblur="updateAlarm()"></input>
+			</div>
+			<div>
+			<a href = "javascript:updateAlarm()"> Alarm Temp</a>
+				<input type="number" id="alarmAbsRangeMin" value="0" step="1" style="width:6vw" onchange="updateAlarm()" onblur="updateAlarm()"></input>
+				<input type="number" id="alarmAbsRangeMax" value="0" step="1" style="width:6vw" onchange="updateAlarm()" onblur="updateAlarm()"></input>
+				
+			</div>
+			<div >
+				<a href="javascript:WebSocketSend()">Send</a>
+				<div id="WebSocket_Form"> </div>
+			</div>
+			<a id="reset_button" href="javascript:reset()" >Reset Chip</a>
+		</div>
+
+	</div> 
+	<div id="log_div" style="overflow:auto; height:400px;">Log<br></div>
+	
+
+	
+
+
+	<script>
+		function openNav() {
+			document.getElementById("menu").style.width = "50vw";
+			// document.getElementById("mainContainer").style.marginRight = "250px";
+			chart.render();
+		}
+
+		function closeNav() {
+			document.getElementById("menu").style.width = "0";
+			// document.getElementById("mainContainer").style.marginRight = "0";
+			chart.render();
+		}
+	</script>
+
+	
+
+</body>
+</html>
