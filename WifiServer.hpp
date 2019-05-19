@@ -153,8 +153,8 @@ static void openssl_server_init(void);
 void wifiSetup(){
       uint8_t mac_addr[8] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
     //esp_base_mac_addr_set(mac_addr);
-      const char * ssid ="Livebox-66CD";
-    WiFiMulti.addAP(ssid, "*****");
+      const char * ssid =WIFI_SSID;
+    WiFiMulti.addAP(ssid, WIFI_PASS);
     Serial.printf("Connecting to : %s\n",ssid);
     WiFi.onEvent(WiFiEvent);
   wifi_connect();
