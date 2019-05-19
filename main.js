@@ -227,7 +227,9 @@ var connCheckInterval = 1000;
 var connTimeOut = 3*connCheckInterval;
 var errTimeOut = 10000;
 
-
+function dateIntervalToString(d){
+  return d.toISOString().substr(11, 8);
+}
 window.setInterval(function(){
   var d = new Date();
   if(WebSocket_connection && (WebSocket_connection.readyState==WebSocket_connection.OPEN)){
@@ -446,6 +448,11 @@ window.onbeforeunload = function() {
             var val = dataview.getFloat32(1,false);
             curTemp = Math.floor(val+0.5);
             $( "#output_div" ).html( curTemp);//+ " &#8451;" );
+            var totalTime = "NA"
+            if(dps.length>0){
+              totalTime = dateIntervalToString(dps[dps.length-1].x)
+            }
+            $("total_time").html(totalTime)
           }
           else if(cmd=='l'){
             var avg5 = 0.0;
