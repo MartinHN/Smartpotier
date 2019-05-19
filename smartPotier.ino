@@ -8,7 +8,7 @@
 
 
 #include <Arduino.h>
-
+#include "secrets.h"
 #include "SPIFFS.h"
  int recIntervalMs=1000*30;
 unsigned long lastRecTime = 0;
