@@ -16,6 +16,8 @@ var refCurv = [];
 var audio = null;
 var alarmWatcher = null;
 
+var hasLocalStorage = false;
+
 var alarmRangeSlope = [0,0];
 var alarmRangeAbs = [0,0];
 var noSleep = null;
@@ -26,7 +28,19 @@ if (!"WebSocket" in window){
   $('#WebSocket_State').text("WebSocket NOT supported by your Browser!");
 }
 var chart=null;
+var contexteAudio =null;
 window.onload = function(){
+  try{
+    hasLocalStorage  ='localStorage' in window && window.localStorage !== null;
+  }
+  catch(error){
+
+  }
+  if(!hasLocalStorage){
+    var err =  ["local storage not supported","values (reference curve, alarm thresholds...) won't be saved"]
+    console.error(err)
+    $( "#log_div" ).append( "<font color=\"red\">"+err.join("<br>")+ "</font><br>" );
+  }
   initNotify(true);
 
   noSleep = new NoSleep();
@@ -54,9 +68,9 @@ window.onload = function(){
 //   }
 // }
 // else{
-  
+
   // crée un contexteaudio
-  var contexteAudio = new (window.AudioContext || window.webkitAudioContext)();
+  contexteAudio = new (window.AudioContext || window.webkitAudioContext)();
   audio = new function(){
 
 
@@ -65,7 +79,9 @@ this.oscillator = contexteAudio.createOscillator();
 this.gainNode = contexteAudio.createGain();
 this.lfoGain = contexteAudio.createGain();
 this.lfo = contexteAudio.createOscillator();
-this.lfo.frequency.value = 1;
+this.lfo.frequency.setTargetAtTime(1,contexteAudio.currentTime,0.015);
+
+
 this.lfo.type = 'square';
 this.lfo.connect(this.lfoGain.gain);
 
@@ -74,31 +90,40 @@ this.oscillator.connect(this.lfoGain);
 this.lfoGain.connect(this.gainNode)
 this.gainNode.connect(contexteAudio.destination);
 this.oscillator.type = 'triangle';
-this.oscillator.frequency.value = 440; // valeur en hertz
+this.oscillator.frequency.setTargetAtTime( 440,contexteAudio.currentTime,0.015); // valeur en hertz
 this.openGain = .85;
-this.gainNode.gain.value = 0;//this.openGain;
-
+this.gainNode.gain.setTargetAtTime(0,contexteAudio.currentTime,0.00015);;//this.openGain;
+this.oscillator.start();
+this.lfo.start();
 
 
 
 // oscillator.start();
 this.play2 = function(state){
-  if(state===null || state===true ){this.gainNode.gain.value = this.openGain;}
-  else{this.gainNode.gain.value = 0;}
+  var v = 0;
+  if(state===null || state===true ){v=this.openGain}
+    this.gainNode.gain.setTargetAtTime(v,contexteAudio.currentTime,0.15);
 
 }
 this.play = function(){
-  this.oscillator.start();
-this.lfo.start();
-this.gainNode.gain.value =this.openGain;
+  this.gainNode.gain.setTargetAtTime(this.openGain,contexteAudio.currentTime,0.15);
+  
+  try {
+    this.oscillator.start();
+    this.lfo.start();
+  }
+  catch(error) {
+  // console.log('necessary but weird error on ipad')
+}
+
+
 }
 this.pause =function(){
-  this.gainNode.gain.value = 0;
+  this.gainNode.gain.setTargetAtTime(0,contexteAudio.currentTime,0.15);
 
 }
 this.setVolume = function(v){
-  // this.gainNode.gain.value = this.openGain;
-this.gainNode.gain.value =v;
+  this.gainNode.gain.setTargetAtTime(v,contexteAudio.currentTime,0.15);
 }
 
 }
@@ -185,9 +210,18 @@ chart = new CanvasJS.Chart("chartContainer", {
   });
 setDarkTheme(false);
 chart.render();
-var it = window.localStorage.getItem("modAvgT");
-if(it){modAvgT = parseFloat(it);}
-$("#refCurv").val(window.localStorage.getItem("refCurv"));
+if(hasLocalStorage){
+  var it = window.localStorage.getItem("modAvgT");
+  if(it){modAvgT = parseFloat(it);}
+  $("#refCurv").val(window.localStorage.getItem("refCurv"));
+  var ar = window.localStorage.getItem("alarmRange").split(',');
+  $("#alarmRangeMin").val( parseFloat(ar[0]))
+  $("#alarmRangeMax").val( parseFloat(ar[1]))
+
+  ar = window.localStorage.getItem("alarmAbsRange").split(',');
+  $("#alarmAbsRangeMin").val( parseFloat(ar[0]))
+  $("#alarmAbsRangeMax").val( parseFloat(ar[1]))
+}
 updateRefCurv()
 var connCheckInterval = 1000;
 var connTimeOut = 3*connCheckInterval;
@@ -415,6 +449,7 @@ window.onbeforeunload = function() {
           }
           else if(cmd=='l'){
             var avg5 = 0.0;
+            var avg30 = 0.0;
             var i = 0;
             var logRcv = []
             for(i = 1 ; i < dataview.byteLength ; i+=8){
@@ -427,7 +462,9 @@ window.onbeforeunload = function() {
               if( xval < maxDate && (dps.length==0 || (dps[dps.length-1].x<xval))){
                 dps.push({x:xval,y: yval});
                 avg5 = computeAvg(5*1000*secToMin);
-                dpsdeltas.push({x:xval,y: avg5});
+                avg30 = computeAvg(30*1000*secToMin);
+                dpsdeltas.push({x:xval,y: avg30});
+                
               }
               else{
                 console.error("non valid entry ",xval.getTime(),dps[dps.length-1].x.getTime());
@@ -439,7 +476,7 @@ window.onbeforeunload = function() {
           chart.render();
           var prec = 1.0;
           $( "#avg5_div" ).text(Math.round(avg5*prec)/prec);
-          $( "#avg30_div" ).text(Math.round(computeAvg(30*1000*secToMin)*prec)/prec);
+          $( "#avg30_div" ).text(Math.round(avg30*prec)/prec);
           avgMod = computeAvg(modAvgT*1000*secToMin);
           $( "#avgmod_div" ).text(Math.round(avgMod*prec)/prec);
           $("#mod_units").html("&#8451;/h ("+modAvgT+(secToMin==1?"s":"m")+")");
@@ -541,8 +578,8 @@ function update3rdSlope(){
   var test=parseFloat($("#3rdSlope").val());
   if(test>0){
     modAvgT = test;
-    window.localStorage.setItem("modAvgT",modAvgT);
-    $("#mod_units").text("&#8451;/h ("+modAvgT+(secToMin==1?"s":"m")+")");
+    if(hasLocalStorage){window.localStorage.setItem("modAvgT",modAvgT);}
+    $("#mod_units").html("&#8451;/h ("+modAvgT+(secToMin==1?"s":"m")+")");
   }
 }
 function updateRefCurv(){
@@ -566,7 +603,9 @@ function updateRefCurv(){
     }
     chart.render();
     console.log(refCurv)
-    window.localStorage.setItem("refCurv",$("#refCurv").val());
+
+    if(hasLocalStorage){window.localStorage.setItem("refCurv",$("#refCurv").val());}
+
   }
 }
 
@@ -574,10 +613,14 @@ function updateAlarm(){
   audio.setVolume( 0);
   document.getElementById("output_div").style.backgroundColor = null;
   document.getElementById("mod_units").style.backgroundColor = null;
-  alarmRangeSlope = [$("#alarmRangeMin").val(),$("#alarmRangeMax").val()]
-  alarmRangeAbs=[$("#alarmAbsRangeMin").val(),$("#alarmAbsRangeMax").val()]
-  window.localStorage.setItem("alarmRange",alarmRangeSlope);
-  window.localStorage.setItem("alarmRangeAbs",alarmRangeAbs);
+  alarmRangeSlope = [parseFloat($("#alarmRangeMin").val()),parseFloat($("#alarmRangeMax").val())]
+  alarmRangeAbs=[parseFloat($("#alarmAbsRangeMin").val()),parseFloat($("#alarmAbsRangeMax").val())]
+  if(hasLocalStorage){
+    window.localStorage.setItem("alarmRange",alarmRangeSlope);
+    window.localStorage.setItem("alarmAbsRange",alarmRangeAbs);
+  }
+
+
   
 }
 
@@ -623,26 +666,26 @@ function notifyWatch(){
 function initNotify(firstCall) {
 
   // Let's check if the browser supports notifications
-  if ("Notification" in window) {
-    if (firstCall || window.Notification.permission !== "denied") {
-      window.Notification.requestPermission(function (permission) {
-      });
-    }
-  }
-  else{
-      if(firstCall){console.error("This browser does not support desktop notification");}
-  }
+  // if ("Notification" in window) {
+  //   if (firstCall || window.Notification.permission !== "denied") {
+  //     window.Notification.requestPermission(function (permission) {
+  //     });
+  //   }
+  // }
+  // else{
+  //     if(firstCall){console.error("This browser does not support desktop notification");}
+  // }
 
   // At last, if the user has denied notifications, and you 
   // want to be respectful there is no need to bother them any more.
 }
 function enableAlarm() {
+
+  // needed here because enableAlarm called on user input
   audio.play();
   audio.setVolume(0);
   initNotify(false);
   if(this.checked ){
-    
-    
     updateAlarm();
     noSleep.enable();
     if(alarmWatcher){
@@ -650,6 +693,7 @@ function enableAlarm() {
     }
     alarmWatcher = notifyWatch();
     console.log('alarm set : ',alarmRangeSlope);
+    
   }
   else{
     document.getElementById("output_div").style.backgroundColor = null;
@@ -663,6 +707,8 @@ function enableAlarm() {
     console.log('alarm unset')
   // document.removeEventListener('touchstart', enableNoSleep, false);
 }
+
+
 }
 
 function reset(){

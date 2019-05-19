@@ -33,7 +33,7 @@
 	}
 
 	.dashBoard{
-		flex:3 1 20vh;
+		flex:0 1 20vh;
 		display: flex;
 		flex-direction: row;
 		flex-wrap: nowrap;
@@ -106,6 +106,11 @@
 	}
 	.sidenav input{
 		font-size: 25px;
+		width:6vw;
+		flex:auto;
+		align-items: stretch;
+		justify-content: space-between;
+
 	}
 	.sidenav a {
 		padding: 8px 18px 8px 32px;
@@ -252,18 +257,18 @@
 
 			<div >
 				<a href = "javascript:updateAlarm()"> Alarm Slope</a>
-				<input type="number" id="alarmRangeMin" value="0" step="1" style="width:6vw" onchange="updateAlarm()" onblur="updateAlarm()"></input>
-				<input type="number" id="alarmRangeMax" value="0" step="1" style="width:6vw" onchange="updateAlarm()" onblur="updateAlarm()"></input>
+				<input type="number" id="alarmRangeMin" value="0" step="1"  onchange="updateAlarm()" onblur="updateAlarm()"></input>
+				<input type="number" id="alarmRangeMax" value="0" step="1" onchange="updateAlarm()" onblur="updateAlarm()"></input>
 			</div>
 			<div>
 			<a href = "javascript:updateAlarm()"> Alarm Temp</a>
-				<input type="number" id="alarmAbsRangeMin" value="0" step="1" style="width:6vw" onchange="updateAlarm()" onblur="updateAlarm()"></input>
-				<input type="number" id="alarmAbsRangeMax" value="0" step="1" style="width:6vw" onchange="updateAlarm()" onblur="updateAlarm()"></input>
+				<input type="number" id="alarmAbsRangeMin" value="0" step="1" onchange="updateAlarm()" onblur="updateAlarm()"></input>
+				<input type="number" id="alarmAbsRangeMax" value="0" step="1"  onchange="updateAlarm()" onblur="updateAlarm()"></input>
 				
 			</div>
 			<div >
 				<a href="javascript:WebSocketSend()">Send</a>
-				<div id="WebSocket_Form"> </div>
+				<div id="WebSocket_Form" style="width:100vw"> </div>
 			</div>
 			<a id="reset_button" href="javascript:reset()" >Reset Chip</a>
 		</div>
@@ -277,7 +282,8 @@
 
 	<script>
 		function openNav() {
-			document.getElementById("menu").style.width = "50vw";
+
+			document.getElementById("menu").style.width = "100vw";
 			// document.getElementById("mainContainer").style.marginRight = "250px";
 			chart.render();
 		}
