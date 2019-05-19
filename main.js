@@ -296,7 +296,7 @@ function computeAvg(time){
     var count = 0;
     var i = 0;
     for (i = dps.length-1 ; i>=0;i-- ){
-      if(dps[i].x- dps[dps.length-1].x< (-time)){break;}
+      if(xToSeconds(dps[i].x)- xToSeconds(dps[dps.length-1].x)< (-time)){break;}
       meanX+=xToSeconds(dps[i].x);
       meanY+=dps[i].y;
       count++;
@@ -315,7 +315,7 @@ function computeAvg(time){
       sum1+=d*(dps[i].y-meanY);
       sum2+=d*d;
     }
-
+    
     avg = sum1/sum2;
 
   }
@@ -454,7 +454,7 @@ function connect(doClose){
                 
               }
               else{
-                console.error("non valid entry ",xval,xToSeconds(dps[dps.length-1].x));
+                //console.error("non valid entry ",xval,xToSeconds(dps[dps.length-1].x));
               }
 
             }
