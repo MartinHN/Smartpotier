@@ -23,6 +23,40 @@ var alarmRangeAbs = [0,0];
 var noSleep = null;
 var avgMod=0;
 var curTemp= 0;
+function xToString(e){
+  var s = (e.value!==undefined)?e.value : e
+  // var m = s/60
+  // var h = m/60
+  // return  Math.floor(h)+":"+Math.floor(m%60)+":"+Math.floor(s%60);  
+  if(s.getDate()>1){
+    var td = new Date(s);
+    td.setDate(td.getDate()-1);
+  return CanvasJS.formatDate(td,"D'j' + HH:mm:ss");  
+  }
+  return CanvasJS.formatDate(s,"HH:mm:ss");
+  // return s.toISOString().substr(11, 8);
+}
+
+function xToSeconds(x){
+  return  x.getTime()/1000.0 ;
+}
+function secondsToD(s){
+  var m = Math.floor(s/60)
+  var h = Math.floor(m/60)
+  var d = Math.floor(h/24)
+
+  return {s:s%60,m:m%60,h:h%24,d:d}
+}
+
+function secondsToX(s){
+  // UTC offset
+  
+  var dl = new Date(Date.UTC(1970,0,1,0,0,0))
+  var d0 = dl.getTimezoneOffset()*60;
+  //var uOff = parseInt(r[1])
+  return new Date((s +d0)*1000  )   ; // forUTC -1
+}
+
 if (!"WebSocket" in window){
   alert("WebSocket NOT supported by your Browser!");
   $('#WebSocket_State').text("WebSocket NOT supported by your Browser!");
@@ -44,30 +78,6 @@ window.onload = function(){
   initNotify(true);
 
   noSleep = new NoSleep();
-  // noSleep = new function(){
-  //   this.enable = function(){};
-  //   this.disable=function(){}
-  // }
-
-  // audio = new Audio("http://soundbible.com/grab.php?id=1937&type=mp3")
-//   var useAudioFile = false;
-//   if(useAudioFile){
-//   audio = new Audio('http://i.cloudup.com/nCtoNq3kJN.m4a');
-//   audio.loop = true;
-//   audio.play2 = function(state){
-//     if(state===true ){
-//       this.play();
-//     }
-//     else if (state===false){
-//       this.pause();
-//     }
-//   }
-//   audio.setVolume = function(v){
-//     this.muted = v==0;
-//     this.volume = v ;//*1.0;
-//   }
-// }
-// else{
 
   // crée un contexteaudio
   contexteAudio = new (window.AudioContext || window.webkitAudioContext)();
@@ -137,89 +147,93 @@ chart = new CanvasJS.Chart("chartContainer", {
   backgroundColor: "transparent",
   title :{text: ""},
   toolTip: {shared: true,backgroundColor: "#DDDDDD"},
-  axisX:{valueFormatString:"HH:mm:ss",labelFontColor:"black"},
+  axisX:{
+
+    labelFormatter: xToString,  
+    // valueFormatString:"HH:mm:ss",
+    labelFontColor:"black"
+  },
 
   legend:{
     cursor: "pointer",
     fontColor:"white",
     itemclick: function (e) {
-                //console.log("legend click: " + e.dataPointIndex);
-                
-                // avoid double click on touch screens
-                var now = new Date();
-                
-                if(now-lastTouchTime>800){
-                  lastTouchTime = now
-                  if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-                    e.dataSeries.visible = false;
-                  } else {
-                    e.dataSeries.visible = true;
-                  }
-                }
+      // avoid double click on touch screens
+      var now = new Date();
 
-                e.chart.render();
-              }
-            },
-            axisY: {
-              includeZero: false,
-              suffix : "C",
-              labelFontColor:"black",
-              valueFormatString:"####"
-              // lineColor: "#4F81BC",
-              // tickColor: "#4F81BC"
-            },
-            axisY2: {
-              includeZero: false,
-              suffix : "C/h",
-              labelFontColor:"black",
-      // lineColor: "#9BBB58",//"#C0504E",
-      // tickColor: "#9BBB58"
-    },
-    data: [
-    {
-      type: "splineArea",
-      name: "Temperature",
-      showInLegend: true,
-      xValueType: "dateTime",
-      xValueFormatString:"HH:mm:ss",
-      dataPoints: dps,
-      color:"#5D31FF"
-    },
-    {
-      type: "spline",
-      name: "Slope",
-      showInLegend: true,
-      visible:false,
-      axisYType: "secondary",
-      xValueType: "dateTime",
-      xValueFormatString:"HH:mm:ss",
-      dataPoints: dpsdeltas,
-      color:"#9BBB58"
-    },
-    {
-      type: "line",
-      name: "Ref",
-      showInLegend: true,
-      xValueType: "dateTime",
-      xValueFormatString:"HH:mm:ss",
-      dataPoints: refCurv,
-      color:"#FFDDB8",//"#C0504E",
+      if(now-lastTouchTime>800){
+        lastTouchTime = now
+        if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+          e.dataSeries.visible = false;
+        } else {
+          e.dataSeries.visible = true;
+        }
+      }
 
+      e.chart.render();
     }
-    ]
-  });
+
+  },
+  axisY: {
+    includeZero: false,
+    suffix : "C",
+    labelFontColor:"black",
+    valueFormatString:"####"
+  },
+  axisY2: {
+    includeZero: false,
+    suffix : "C/h",
+    labelFontColor:"black",
+  },
+  data: [
+  {
+    type: "splineArea",
+    name: "Temperature",
+    showInLegend: true,
+    xValueType: "dateTime",
+    xValueFormatString:"HH:mm:ss",
+    dataPoints: dps,
+    color:"#5D31FF"
+  },
+  {
+    type: "spline",
+    name: "Slope",
+    showInLegend: true,
+    visible:false,
+    axisYType: "secondary",
+    xValueType: "dateTime",
+    xValueFormatString:"HH:mm:ss",
+    dataPoints: dpsdeltas,
+    color:"#9BBB58"
+  },
+  {
+    type: "line",
+    name: "Ref",
+    showInLegend: true,
+    xValueType: "dateTime",
+    xValueFormatString:"HH:mm:ss",
+    dataPoints: refCurv,
+    color:"#FFDDB8",//"#C0504E",
+
+  }
+  ]
+});
 setDarkTheme(false);
 chart.render();
 if(hasLocalStorage){
   var it = window.localStorage.getItem("modAvgT");
   if(it){modAvgT = parseFloat(it);}
   $("#refCurv").val(window.localStorage.getItem("refCurv"));
-  var ar = window.localStorage.getItem("alarmRange").split(',');
-  $("#alarmRangeMin").val( parseFloat(ar[0]))
+  var ar = window.localStorage.getItem("alarmRange")
+  if(ar){ar = ar.split(',');}
+  else{ar = [0,0]}
+    $("#alarmRangeMin").val( parseFloat(ar[0]))
   $("#alarmRangeMax").val( parseFloat(ar[1]))
 
-  ar = window.localStorage.getItem("alarmAbsRange").split(',');
-  $("#alarmAbsRangeMin").val( parseFloat(ar[0]))
+  ar = window.localStorage.getItem("alarmAbsRange")
+  if(ar){ar = ar.split(',');}
+  else{ar = [0,0]}
+    $("#alarmAbsRangeMin").val( parseFloat(ar[0]))
   $("#alarmAbsRangeMax").val( parseFloat(ar[1]))
 }
 updateRefCurv()
@@ -227,9 +241,7 @@ var connCheckInterval = 1000;
 var connTimeOut = 3*connCheckInterval;
 var errTimeOut = 10000;
 
-function dateIntervalToString(d){
-  return d.toISOString().substr(11, 8);
-}
+
 window.setInterval(function(){
   var d = new Date();
   if(WebSocket_connection && (WebSocket_connection.readyState==WebSocket_connection.OPEN)){
@@ -237,7 +249,7 @@ window.setInterval(function(){
     var lastKnownT = -1;
     if(dps.length){
       var lastE = dps[dps.length-1].x;
-      lastKnownT=Math.floor(lastE.getTime()/1000.0 - lastE.getTimezoneOffset()*60);
+      lastKnownT=Math.floor(xToSeconds(lastE) );
     }
     var deltaT =d -lastWsActivityDate ;
     if(recState!=0 && d-lastAskedRecI >=rec_interval*1000/4.0 ){
@@ -269,64 +281,64 @@ window.setInterval(function(){
       },connCheckInterval);
 };
 window.onbeforeunload = function() {
-      // disable onclose handler first
-      // WebSocket_connection.onclose = function () {};
-      WebSocket_connection.close();
-      WebSocket_connection=null;
-    };
+  // disable onclose handler first
+  // WebSocket_connection.onclose = function () {};
+  WebSocket_connection.close();
+  WebSocket_connection=null;
+};
 
-    function computeAvg(time){
-      var scale = 1.0/(60*60*1000.0);//*60
-      var avg = 0;
-      if(dps.length>1){
-        var meanX =0;
-        var meanY=0;
-        var count = 0;
-        var i = 0;
-        for (i = dps.length-1 ; i>=0;i-- ){
-          if(dps[i].x- dps[dps.length-1].x< (-time)){break;}
-          meanX+=dps[i].x.getTime();
-          meanY+=dps[i].y;
-          count++;
-        }
-        
-        meanX/=(count);meanY/=(count);
-        //console.log(meanX*scale,meanY,count);
-
-        var sum1 = 0;
-        var sum2 = 0;
-        var j = 0;
-        var d = 0;
-        for(j = 0 ; j < count ; j+=1){
-          i = dps.length-1 - j;
-          d = (dps[i].x.getTime()-meanX)*scale;
-          sum1+=d*(dps[i].y-meanY);
-          sum2+=d*d;
-        }
-        //console.log(sum1,sum2)
-        avg = sum1/sum2;
-
-      }
-      return avg;
-
+function computeAvg(time){
+  var scale = 1.0/(60*60);
+  var avg = 0;
+  if(dps.length>1){
+    var meanX =0;
+    var meanY=0;
+    var count = 0;
+    var i = 0;
+    for (i = dps.length-1 ; i>=0;i-- ){
+      if(dps[i].x- dps[dps.length-1].x< (-time)){break;}
+      meanX+=xToSeconds(dps[i].x);
+      meanY+=dps[i].y;
+      count++;
     }
 
-    function connect(doClose){
-      if(WebSocket_connection && !doClose && (WebSocket_connection.readyState == WebSocket_connection.CONNECTING)){
-        console.log("connecting");
-        $('#WebSocket_State').text("Connecting");
-      // return;
+    meanX/=(count);meanY/=(count);
+
+
+    var sum1 = 0;
+    var sum2 = 0;
+    var j = 0;
+    var d = 0;
+    for(j = 0 ; j < count ; j+=1){
+      i = dps.length-1 - j;
+      d = (xToSeconds(dps[i].x)-meanX)*scale;
+      sum1+=d*(dps[i].y-meanY);
+      sum2+=d*d;
     }
-    else if(WebSocket_connection && doClose && (WebSocket_connection.readyState != WebSocket_connection.CLOSING)){
-      console.log("closing");
-      $('#WebSocket_State').text("Closing");
-      WebSocket_connection.close();
+
+    avg = sum1/sum2;
+
+  }
+  return avg;
+
+}
+
+function connect(doClose){
+  if(WebSocket_connection && !doClose && (WebSocket_connection.readyState == WebSocket_connection.CONNECTING)){
+    console.log("connecting");
+    $('#WebSocket_State').text("Connecting");
+    // return;
+  }
+  else if(WebSocket_connection && doClose && (WebSocket_connection.readyState != WebSocket_connection.CLOSING)){
+    console.log("closing");
+    $('#WebSocket_State').text("Closing");
+    WebSocket_connection.close();
+    shouldAskForRecStart = true;
+  }
+  else if(WebSocket_connection==null){
+    try{
+      console.log("start new connection");
       shouldAskForRecStart = true;
-    }
-    else if(WebSocket_connection==null){
-      try{
-        console.log("start new connection");
-        shouldAskForRecStart = true;
         WebSocket_connection = new WebSocket("ws://smartpotier.local:81");//$('#websocket_address').val());
         $('#WebSocket_State').text("Starting Connection");
       }
@@ -388,40 +400,7 @@ window.onbeforeunload = function() {
           console.log("recieved recstate : "+recState);
           if (recState)WebSocket_connection.send("p:");
         }
-        // else if(evt.data.startsWith("l:")){
-        //   //console.log(evt.data);
-        //   var pms = evt.data.substr(2).split(',');
-        //   var avg5 = 0.0;
-        //   var i = 0;
-        //   var logRcv = []
-        //   for(i = 0 ; i < pms.length ; i+=2){
-        //     var x = parseInt(pms[i])*1000;
-        //     var xval = new Date();
-        //     xval.setTime(x + xval.getTimezoneOffset()*60000 );
-        //     var yval= parseFloat(pms[i+1]);
-        //     logRcv.push([x/1000,yval])
-        //     var maxDate = new Date( 3*24*60*60*1000); 
-        //     if( xval < maxDate && (dps.length==0 || (dps[dps.length-1].x<xval))){
-        //       dps.push({x:xval,y: yval});
-        //       avg5 = computeAvg(5*1000*secToMin);
-        //       dpsdeltas.push({x:xval,y: avg5});
-        //     }
-        //     else{
-        //       console.error("non valid entry ",xval.getTime(),dps[dps.length-1].x.getTime());
-        //     }
-
-        //   }
-          // if(logRcv.length){console.log(logRcv);}
-        //   chart.render();
-        //   var prec = 100.0;
-        //   $( "#avg5_div" ).text(Math.round(avg5*prec)/prec);
-        //   $( "#avg30_div" ).text(Math.round(computeAvg(30*1000*secToMin)*prec)/prec);
-        //   avgMod = computeAvg(modAvgT*1000*secToMin);
-        //   $( "#avgmod_div" ).text(Math.round(avgMod*prec)/prec);
-        //   $("#mod_units").html("&#8451;/h ("+modAvgT+(secToMin==1?"s":"m")+")");
-        //   $("#5_units").html("&#8451;/h (5"+(secToMin==1?"s":"m")+")");
-        //   $("#30_units").html("&#8451;/h (30"+(secToMin==1?"s":"m")+")");
-        // }
+        
 
         else if(evt.data.startsWith("err:")){
           console.error(evt);
@@ -450,31 +429,32 @@ window.onbeforeunload = function() {
             $( "#output_div" ).html( curTemp);//+ " &#8451;" );
             var totalTime = "NA"
             if(dps.length>0){
-              totalTime = dateIntervalToString(dps[dps.length-1].x)
+              totalTime = xToString(dps[dps.length-1].x)
             }
-            $("total_time").html(totalTime)
+            $("#total_time").html(totalTime)
           }
           else if(cmd=='l'){
             var avg5 = 0.0;
             var avg30 = 0.0;
             var i = 0;
             var logRcv = []
+            var hasNewInfo = false;
             for(i = 1 ; i < dataview.byteLength ; i+=8){
-              var x = dataview.getUint32(i,false)*1000;
-              var xval = new Date();
-              xval.setTime(x + xval.getTimezoneOffset()*60000 );
+              var x = dataview.getUint32(i,false); // in seconds
+              var xval = secondsToX(x);
               var yval= dataview.getFloat32(i+4,false)
-              logRcv.push([x/1000,yval])
-              var maxDate = new Date( 3*24*60*60*1000); 
-              if( xval < maxDate && (dps.length==0 || (dps[dps.length-1].x<xval))){
+              logRcv.push([x,yval])
+              var maxSeconds =  3*24*60*60; 
+              if( x < maxSeconds && (dps.length==0 || (dps[dps.length-1].x<xval))){
                 dps.push({x:xval,y: yval});
-                avg5 = computeAvg(5*1000*secToMin);
-                avg30 = computeAvg(30*1000*secToMin);
-                dpsdeltas.push({x:xval,y: x<30*1000*secToMin?0:avg30 });
+                avg5 = computeAvg(5*secToMin);
+                avg30 = computeAvg(30*secToMin);
+                dpsdeltas.push({x:xval,y: x<30*secToMin?0:avg30 });
+                hasNewInfo = true;
                 
               }
               else{
-                console.error("non valid entry ",xval.getTime(),dps[dps.length-1].x.getTime());
+                console.error("non valid entry ",xval,xToSeconds(dps[dps.length-1].x));
               }
 
             }
@@ -482,9 +462,11 @@ window.onbeforeunload = function() {
 
           chart.render();
           var prec = 1.0;
-          $( "#avg5_div" ).text(Math.round(avg5*prec)/prec);
-          $( "#avg30_div" ).text(Math.round(avg30*prec)/prec);
-          avgMod = computeAvg(modAvgT*1000*secToMin);
+          if(hasNewInfo){
+            $( "#avg5_div" ).text(Math.round(avg5*prec)/prec);
+            $( "#avg30_div" ).text(Math.round(avg30*prec)/prec);
+          }
+          avgMod = computeAvg(modAvgT*secToMin);
           $( "#avgmod_div" ).text(Math.round(avgMod*prec)/prec);
           $("#mod_units").html("&#8451;/h ("+modAvgT+(secToMin==1?"s":"m")+")");
           $("#5_units").html("&#8451;/h (5"+(secToMin==1?"s":"m")+")");
@@ -594,19 +576,19 @@ function updateRefCurv(){
   if(tmp.length){
     refCurv.length=0;
     for (var i = 0 ;i < tmp.length ;i++){
-      var x = new Date();
+      var x = 0;
       
       var y = -1
       var split = tmp[i].split(':')
       if( split.length>1){
-        x.setTime(parseFloat(split[0])*60*60*1000+x.getTimezoneOffset()*60000)
+        x = parseFloat(split[0])*60*60
         y = parseFloat(split[1])
       }
       else{
         y = parseFloat(tmp[i]);
-        x.setTime(i *60*60* 1000+x.getTimezoneOffset()*60000);
+        x = i *60*60;
       }
-      refCurv.push({x:x,y:y})
+      refCurv.push({x:secondsToX(x),y:y})
     }
     chart.render();
     console.log(refCurv)
