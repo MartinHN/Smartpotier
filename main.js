@@ -463,7 +463,7 @@ window.onbeforeunload = function() {
                 dps.push({x:xval,y: yval});
                 avg5 = computeAvg(5*1000*secToMin);
                 avg30 = computeAvg(30*1000*secToMin);
-                dpsdeltas.push({x:xval,y: avg30});
+                dpsdeltas.push({x:xval,y: x<30*1000*secToMin?0:avg30 });
                 
               }
               else{
