@@ -32,7 +32,10 @@ function xToString(e){
 }
 
 function xToSeconds(x){
-  return  x.getTime()/1000.0 ;
+  var dl = new Date(Date.UTC(1970,0,1,0,0,0))
+  var d0 = dl.getTimezoneOffset()*60*1000;
+
+  return  new Date(x-d0).getTime()/1000.0 ;
 }
 
 function secondsToX(s){
