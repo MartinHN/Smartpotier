@@ -23,37 +23,22 @@ var alarmRangeAbs = [0,0];
 var noSleep = null;
 var avgMod=0;
 var curTemp= 0;
+
 function xToString(e){
   var s = (e.value!==undefined)?e.value : e
-  // var m = s/60
-  // var h = m/60
-  // return  Math.floor(h)+":"+Math.floor(m%60)+":"+Math.floor(s%60);  
-  if(s.getDate()>1){
-    var td = new Date(s);
-    td.setDate(td.getDate()-1);
-  return CanvasJS.formatDate(td,"D'j' + HH:mm:ss");  
-  }
-  return CanvasJS.formatDate(s,"HH:mm:ss");
+  if(s.getDate()>1){var td = new Date(s);td.setDate(td.getDate()-1);return CanvasJS.formatDate(td,"D'j' + HH:mm:ss");  }
+  return CanvasJS.formatDate(s,"HH:mm");
   // return s.toISOString().substr(11, 8);
 }
 
 function xToSeconds(x){
   return  x.getTime()/1000.0 ;
 }
-function secondsToD(s){
-  var m = Math.floor(s/60)
-  var h = Math.floor(m/60)
-  var d = Math.floor(h/24)
-
-  return {s:s%60,m:m%60,h:h%24,d:d}
-}
 
 function secondsToX(s){
   // UTC offset
-  
   var dl = new Date(Date.UTC(1970,0,1,0,0,0))
   var d0 = dl.getTimezoneOffset()*60;
-  //var uOff = parseInt(r[1])
   return new Date((s +d0)*1000  )   ; // forUTC -1
 }
 
@@ -191,7 +176,7 @@ chart = new CanvasJS.Chart("chartContainer", {
     name: "Temperature",
     showInLegend: true,
     xValueType: "dateTime",
-    xValueFormatString:"HH:mm:ss",
+    xValueFormatString:"HH:mm",
     dataPoints: dps,
     color:"#5D31FF"
   },
@@ -202,7 +187,7 @@ chart = new CanvasJS.Chart("chartContainer", {
     visible:false,
     axisYType: "secondary",
     xValueType: "dateTime",
-    xValueFormatString:"HH:mm:ss",
+    xValueFormatString:"HH:mm",
     dataPoints: dpsdeltas,
     color:"#9BBB58"
   },
@@ -211,7 +196,7 @@ chart = new CanvasJS.Chart("chartContainer", {
     name: "Ref",
     showInLegend: true,
     xValueType: "dateTime",
-    xValueFormatString:"HH:mm:ss",
+    xValueFormatString:"HH:mm",
     dataPoints: refCurv,
     color:"#FFDDB8",//"#C0504E",
 
@@ -236,7 +221,7 @@ if(hasLocalStorage){
     $("#alarmAbsRangeMin").val( parseFloat(ar[0]))
   $("#alarmAbsRangeMax").val( parseFloat(ar[1]))
 }
-updateRefCurv()
+updateRefCurvePoints()
 var connCheckInterval = 1000;
 var connTimeOut = 3*connCheckInterval;
 var errTimeOut = 10000;
@@ -370,6 +355,7 @@ function connect(doClose){
         _setState(true);
         WebSocket_connection.send("r:")
         WebSocket_connection.send("q:"+rec_interval)
+        getRefCurves();
 
       };
 
@@ -379,6 +365,7 @@ function connect(doClose){
         
         //console.log(evt.data);
         if (typeof evt.data === 'string' || evt.data instanceof String){
+
           if( evt.data.startsWith("p:")){
             var startDate = evt.data.substr(2).trim();
             if(startDate!=recStartDate){
@@ -388,44 +375,53 @@ function connect(doClose){
             }
           }
 
-         //  else if( evt.data.startsWith("v:")){
-         //   curTemp = Math.floor(parseFloat(evt.data.substr(2).trim())+0.5);
-         //   $( "#output_div" ).html( curTemp);//+ " &#8451;" );
-         // }
-         else if( evt.data.startsWith("r:")){
-          recState = parseInt(evt.data.substr(2).trim());
-          lastAskedRecI=0;
-          $("#rec_button").css("background",recState==1?"red":"green")
-          $("#rec_button").text(recState==1?"Stop Rec":"Start Rec")
-          console.log("recieved recstate : "+recState);
-          if (recState)WebSocket_connection.send("p:");
-        }
-        
+          else if( evt.data.startsWith("refNames:")){
+            var el=$("#refCurves");
+            el.empty();
+            var names = evt.data.substr(9).trim();
+            var ns = names.split(',');
+            for (var i in ns){
+              var n = ns[i];
+              if(n){
+                el.append($('<option>',{text:n,value:n}));
+              }
+            }
 
-        else if(evt.data.startsWith("err:")){
-          console.error(evt);
-          $( "#log_div" ).append( evt.data.substr(4).trim()+ "<br>" );
-          $('#WebSocket_State').text(evt.data);
-        }
-        else if(evt.data.startsWith("inf:")){
-          console.log(evt);
-          $( "#log_div" ).append( evt.data.substr(4).trim()+ "<br>" );
-          
+          }
+          else if( evt.data.startsWith("r:")){
+            recState = parseInt(evt.data.substr(2).trim());
+            lastAskedRecI=0;
+            $("#rec_button").css("background",recState==1?"red":"green")
+            $("#rec_button").text(recState==1?"Stop Rec":"Start Rec")
+            console.log("recieved recstate : "+recState);
+            if (recState)WebSocket_connection.send("p:");
+          }
+
+
+          else if(evt.data.startsWith("err:")){
+            console.error(evt);
+            $( "#log_div" ).append( evt.data.substr(4).trim()+ "<br>" );
+            $('#WebSocket_State').text(evt.data);
+          }
+          else if(evt.data.startsWith("inf:")){
+            console.log(evt);
+            $( "#log_div" ).append( evt.data.substr(4).trim()+ "<br>" );
+
+          }
+          else{
+            console.log(evt);
+          }
         }
         else{
-          console.log(evt);
-        }
-      }
-      else{
-        var fileReader = new FileReader();
+          var fileReader = new FileReader();
 
-        fileReader.onload = function(progressEvent) {
-          var Arr = new Uint8Array(this.result);
-          var cmd = String.fromCharCode(Arr[0]);
-          var dataview = new DataView(this.result);
-          if(cmd=='v'){
-            var val = dataview.getFloat32(1,false);
-            curTemp = Math.floor(val+0.5);
+          fileReader.onload = function(progressEvent) {
+            var Arr = new Uint8Array(this.result);
+            var cmd = String.fromCharCode(Arr[0]);
+            var dataview = new DataView(this.result);
+            if(cmd=='v'){
+              var val = dataview.getFloat32(1,false);
+              curTemp = Math.floor(val+0.5);
             $( "#output_div" ).html( curTemp);//+ " &#8451;" );
             var totalTime = "NA"
             if(dps.length>0){
@@ -473,14 +469,33 @@ function connect(doClose){
           $("#30_units").html("&#8451;/h (30"+(secToMin==1?"s":"m")+")");
 
         }
-        else{
-          console.error('unknown cmd : '+cmd,Arr);
-        }
+        else if(cmd=='c'){
+          var refString = ""
+          for(i = 1 ; i < dataview.byteLength ; i+=8){
+              var x = dataview.getUint32(i,false)/60/60; // in hours
+              var needShorten = Math.floor(x)===(i-1)/8;
+              var yval= dataview.getFloat32(i+4,false)
+              if(i!==1){refString+=",";}
+              if(needShorten){
+                refString+= ""+yval;
+              }
+              else{
+                refString+= ""+x+":"+yval;
+              }
+              
+
+            }
+            $("#refCurv").val(refString)
+            updateRefCurvePoints();
+          }
+          else{
+            console.error('unknown cmd : '+cmd,Arr);
+          }
 
 
-      };
+        };
 
-      fileReader.readAsArrayBuffer(evt.data);
+        fileReader.readAsArrayBuffer(evt.data);
 
 
 
@@ -571,7 +586,12 @@ function update3rdSlope(){
     $("#mod_units").html("&#8451;/h ("+modAvgT+(secToMin==1?"s":"m")+")");
   }
 }
-function updateRefCurv(){
+
+function changeSelectedRefCurve(){
+  var selected = $("#refCurves").val()
+  WebSocket_connection.send("selectCurve:"+selected);
+}
+function updateRefCurvePoints(){
   var tmp=$("#refCurv").val().split(',');
   if(tmp.length){
     refCurv.length=0;
@@ -598,6 +618,40 @@ function updateRefCurv(){
   }
 }
 
+
+function deleteSelectedCurve(){
+  var refCurveName = $("#refCurves").val()
+  if(confirm("are you sure you want to delete : "+refCurveName)){
+    WebSocket_connection.send("deleteCurve:"+refCurveName);
+  }
+}
+function createNewCurve(){
+  var refCurveName = prompt("enter name of new ref curve : ","")
+  if(refCurveName){
+    var refValString = $("#refCurv").val();
+    var points = refValString.split(",");
+    var secondsString = ""
+    for(var i in points){
+      var p = points[i];
+      var sp = p.split(':');
+      var isShorten = sp.length<2;
+      if(isShorten){
+        sp = [parseInt(i)*60*60,p];
+      }
+      else{
+      sp[0] = Math.floor(parseFloat(sp[0])*60*60);
+      }
+      if(i!=0){secondsString+=",";}
+      secondsString+= ""+sp[0]+":"+sp[1];
+    }
+    WebSocket_connection.send("createCurve:"+refCurveName+":"+secondsString);
+  }
+  
+}
+
+function getRefCurves(){
+  WebSocket_connection.send("getExistingRefNames");
+}
 function updateAlarm(){
   audio.setVolume( 0);
   document.getElementById("output_div").style.backgroundColor = null;

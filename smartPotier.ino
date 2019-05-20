@@ -9,7 +9,9 @@
 
 #include <Arduino.h>
 #include "secrets.h"
+
 #include "SPIFFS.h"
+#include "Utils.hpp"
  int recIntervalMs=1000*30;
 unsigned long lastRecTime = 0;
 unsigned long ct=0;
@@ -44,7 +46,7 @@ const int sIntervalMs = 1000;
 unsigned long lastSampleTime = 0;
 
 double curMeasureMv = 0;
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels);
+
 
 void setup() {
   pinMode(LED_BUILTIN,OUTPUT);
@@ -59,22 +61,26 @@ void setup() {
     Serial.println();
     Serial.println();
 //esp_log_level_set("*", ESP_LOG_INFO);
-
+    
     if(!SPIFFS.begin()){//true,"/spiffs",10)){
     isOn = !isOn;
     //digitalWrite(LED_BUILTIN,isOn);
     Serial.println("!!!SPIFFS not opened!");
     }
     else{
+      // auto formatted = SPIFFS.format();
+      // Serial.println(formatted?"formatted":"not formatted");
       Serial.println("SPIFFS opened!");
+      
       listDir(SPIFFS,"/",3);
     }
     
     wifiSetup();
     isOn = !isOn;
     //digitalWrite(LED_BUILTIN,isOn);
-      
+    
     ftpSrv.begin("esp32","esp32");    //username, password for ftp.  set ports in ESP8266FtpServer.h  (default 21, 50009 for PASV)
+    
     recorder_setup();
     isOn = !isOn;
     //digitalWrite(LED_BUILTIN,isOn);
@@ -90,6 +96,7 @@ void setup() {
 
 void loop() {
     ct= millis();
+    
     if(serveFTP) ftpSrv.handleFTP();
     
     
@@ -115,39 +122,4 @@ void broadcastIfNeeded(){
       broadcastData('v',temp);
     }
 }
-
-
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
-    Serial.printf("Listing directory: %s\n", dirname);
-
-    File root = fs.open(dirname);
-    if(!root){
-        Serial.println("Failed to open directory");
-        return;
-    }
-    if(!root.isDirectory()){
-        Serial.println("Not a directory");
-        return;
-    }
-
-    File file = root.openNextFile();
-    while(file){
-        if(file.isDirectory()){
-            Serial.print("  DIR : ");
-            Serial.println(file.name());
-            if(levels){
-                listDir(fs, file.name(), levels -1);
-            }
-        } else {
-            Serial.print("  FILE: ");
-            Serial.print(file.name());
-            Serial.print("  SIZE: ");
-            Serial.println(file.size());
-        }
-        file = root.openNextFile();
-    }
-}
-
-
-
 

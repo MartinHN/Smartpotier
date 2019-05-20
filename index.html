@@ -112,6 +112,14 @@
 		justify-content: space-between;
 
 	}
+	.sidenav select{
+		font-size: 25px;
+		width:6vw;
+		flex:auto;
+		align-items: stretch;
+		justify-content: space-between;
+
+	}
 	.sidenav a {
 		padding: 8px 18px 8px 32px;
 		text-decoration: none;
@@ -246,9 +254,24 @@
 			</div>
 
 			<div >
-				<a href = "javascript:updateRefCurv()"> Ref Curve</a>
-				<input type="text" id="refCurv" value="ref curve" onkeydown = "if (event.keyCode == 13)updateRefCurv()" onblur="updateRefCurv()" ></input>
+				<a href = "javascript:updateRefCurvePoints()"> Ref Curve</a>
+				<input type="text" id="refCurv" value="ref curve" onkeydown = "if (event.keyCode == 13)updateRefCurvePoints()" onblur="updateRefCurvePoints()" ></input>
 			</div>
+			<div >
+				<a href = "javascript:getRefCurves()"> Ref Curves</a>
+				<select onchange="changeSelectedRefCurve()" id="refCurves" name="references">
+					<option value="inival" > initial option</option>
+				 </select>
+			</div>
+			<div >
+				<a href = "javascript:void()"> Ref Curves Action : </a>
+				
+					<a href = "javascript:deleteSelectedCurve()"> delete selected Curve</a>
+					<a href = "javascript:createNewCurve()"> create new Curve</a>
+				
+				</label>
+			</div>
+
 			<div>
 				<a>Alarm</a>
 				<label class="switch">

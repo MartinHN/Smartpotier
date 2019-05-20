@@ -237,6 +237,7 @@ if __name__ == "__main__":
 
   from ftplib import FTP
   import socket
+  print('getting ip');
   ip = socket.gethostbyname('smartpotier.local')
   print(ip)
   print('logging in');
