@@ -11,7 +11,7 @@ var lastCloseDate = new Date();
 var lastAskedRecI = 0;
 var dps = []; // dataPoints
 var dpsdeltas = [];
-var modAvgT = 60;
+var modAvgT = 5;
 var refCurv = [];
 var audio = null;
 var alarmWatcher = null;
@@ -211,6 +211,7 @@ window.onload = function () {
   if (hasLocalStorage) {
     var it = window.localStorage.getItem("modAvgT");
     if (it) { modAvgT = parseFloat(it); }
+    $("#3rdSlope").val(modAvgT)
     $("#refCurv").val(window.localStorage.getItem("refCurv"));
     var ar = window.localStorage.getItem("alarmRange")
     if (ar) { ar = ar.split(','); }
@@ -726,6 +727,7 @@ function initNotify(firstCall) {
 function enableAlarm() {
 
   // needed here because enableAlarm called on user input
+  if (contexteAudio && contexteAudio.resume) contexteAudio.resume()
   audio.play();
   audio.setVolume(0);
   initNotify(false);
@@ -769,11 +771,14 @@ function setDarkTheme(isDark) {
   var fontColor = isDark ? "#FFFDFB" : "black";
   $('body').css("color", fontColor);
   $('body').css("background-color", isDark ? "#222222" : "white");
-  chart.toolTip.backgroundColor = isDark ? "#DDDDDD" : "white";
-  chart.axisX.labelFontColor = fontColor;
-  chart.axisY.labelFontColor = fontColor;
-  chart.axisY2.labelFontColor = fontColor;
-  chart.options.legend.fontColor = fontColor;
+  const options = chart.options
+  if (options) {
+    options.toolTip.backgroundColor = isDark ? "#DDDDDD" : "white";
+    options.axisX.labelFontColor = fontColor;
+    options.axisY.labelFontColor = fontColor;
+    options.axisY2.labelFontColor = fontColor;
+    options.legend.fontColor = fontColor;
+  }
 
 
 }

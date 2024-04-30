@@ -31,6 +31,9 @@ WebPage
 * export curve as csv
 * a cumbersome websocket auto reconnect
 
+# minify dependencies
+ npm install html-minifier -g
+  npm install uglify-js -g
 
 
 
