@@ -655,7 +655,6 @@ function getRefCurves() {
   WebSocket_connection.send("getExistingRefNames");
 }
 function updateAlarm() {
-  audio.setVolume(0);
   document.getElementById("output_div").style.backgroundColor = null;
   document.getElementById("mod_units").style.backgroundColor = null;
   alarmRangeSlope = [parseFloat($("#alarmRangeMin").val()), parseFloat($("#alarmRangeMax").val())]
@@ -671,6 +670,7 @@ function updateAlarm() {
 
 function notifyWatch() {
   var wasAlarm = false;
+  audio.setVolume(0);
   return setInterval(function () {
     var isOutOfSlope = (alarmRangeSlope[0] != alarmRangeSlope[1] && (avgMod < alarmRangeSlope[0] || avgMod > alarmRangeSlope[1]));
     var isOutOfAbs = (alarmRangeAbs[0] != 0 && curTemp < alarmRangeAbs[0]) || (alarmRangeAbs[1] != 0 && curTemp > alarmRangeAbs[1]);
